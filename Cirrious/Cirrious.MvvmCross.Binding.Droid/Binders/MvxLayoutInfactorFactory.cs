@@ -14,7 +14,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
         private static Field _layoutInflaterFactory2Field;
         private static bool _checkedField;
 
-        private class FactoryWrapper : Java.Lang.Object, LayoutInflater.IFactory
+        internal class FactoryWrapper : Java.Lang.Object, LayoutInflater.IFactory
         {
             protected readonly IMvxLayoutInfactorFactory DelegateFactory;
 
@@ -29,7 +29,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
             }
         }
 
-        private class FactoryWrapper2 : FactoryWrapper, LayoutInflater.IFactory2
+        internal class FactoryWrapper2 : FactoryWrapper, LayoutInflater.IFactory2
         {
             public FactoryWrapper2(IMvxLayoutInfactorFactory delegateFactory)
                 : base(delegateFactory) {}
