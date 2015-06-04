@@ -14,10 +14,12 @@ using Cirrious.MvvmCross.Binding.Bindings;
 
 namespace Cirrious.MvvmCross.Binding.Droid.Binders
 {
-    public interface IMvxLayoutInfactorFactory
+    public interface IMvxLayoutInflaterHolderFactory
     {
         IList<KeyValuePair<object, IMvxUpdateableBinding>> CreatedBindings { get; }
 
         View OnCreateView(View parent, string name, Context context, IAttributeSet attrs);
+
+        View BindView(View view, Context context, IAttributeSet attrs);
     }
 }

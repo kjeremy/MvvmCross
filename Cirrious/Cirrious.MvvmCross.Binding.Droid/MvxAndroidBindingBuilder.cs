@@ -50,7 +50,7 @@ namespace Cirrious.MvvmCross.Binding.Droid
             return new MvxAndroidViewBinderFactory(); 
         }
 
-        protected virtual IMvxLayoutInfactorFactoryFactory CreateLayoutInfactorFactoryFactory()
+        protected virtual IMvxLayoutInflaterHolderFactoryFactory CreateLayoutInfactorFactoryFactory()
         {
             return new MvxLayoutInflatorFactoryFactory();
         }

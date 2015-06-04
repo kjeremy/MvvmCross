@@ -16,9 +16,9 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
 
         internal class FactoryWrapper : Java.Lang.Object, LayoutInflater.IFactory
         {
-            protected readonly IMvxLayoutInfactorFactory DelegateFactory;
+            protected readonly IMvxLayoutInflaterHolderFactory DelegateFactory;
 
-            public FactoryWrapper(IMvxLayoutInfactorFactory delegateFactory)
+            public FactoryWrapper(IMvxLayoutInflaterHolderFactory delegateFactory)
             {
                 this.DelegateFactory = delegateFactory;
             }
@@ -31,7 +31,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
 
         internal class FactoryWrapper2 : FactoryWrapper, LayoutInflater.IFactory2
         {
-            public FactoryWrapper2(IMvxLayoutInfactorFactory delegateFactory)
+            public FactoryWrapper2(IMvxLayoutInflaterHolderFactory delegateFactory)
                 : base(delegateFactory) {}
 
             public View OnCreateView(View parent, string name, Context context, IAttributeSet attrs)
@@ -40,7 +40,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
             }
         }
 
-        public static void SetFactory(LayoutInflater layoutInflater, IMvxLayoutInfactorFactory factory)
+        public static void SetFactory(LayoutInflater layoutInflater, IMvxLayoutInflaterHolderFactory factory)
         {
             if (SdkInt >= 21)
             {

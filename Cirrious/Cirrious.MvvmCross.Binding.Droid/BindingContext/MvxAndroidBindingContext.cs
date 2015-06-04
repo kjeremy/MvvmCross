@@ -20,29 +20,29 @@ namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
           , IMvxAndroidBindingContext
     {
         private readonly Context _droidContext;
-        private IMvxLayoutInflater _layoutInflater;
-        private IMvxLayoutInfactorFactoryFactory _layoutInfactorFactoryFactory;
+        private IMvxLayoutInflaterHolder _layoutInflaterHolder;
+        private IMvxLayoutInflaterHolderFactoryFactory _layoutInflaterHolderFactoryFactory;
 
-        public MvxAndroidBindingContext(Context droidContext, IMvxLayoutInflater layoutInflater, object source = null)
+        public MvxAndroidBindingContext(Context droidContext, IMvxLayoutInflaterHolder layoutInflaterHolder, object source = null)
             : base(source)
         {
             _droidContext = droidContext;
-            _layoutInflater = layoutInflater;
+            this._layoutInflaterHolder = layoutInflaterHolder;
         }
 
-        public IMvxLayoutInflater LayoutInflater
+        public IMvxLayoutInflaterHolder LayoutInflaterHolder
         {
-            get { return _layoutInflater; }
-            set { _layoutInflater = value; }
+            get { return this._layoutInflaterHolder; }
+            set { this._layoutInflaterHolder = value; }
         }
 
-        protected IMvxLayoutInfactorFactoryFactory FactoryFactory
+        protected IMvxLayoutInflaterHolderFactoryFactory FactoryFactory
         {
             get
             {
-                if (_layoutInfactorFactoryFactory == null)
-                    _layoutInfactorFactoryFactory = Mvx.Resolve<IMvxLayoutInfactorFactoryFactory>();
-                return _layoutInfactorFactoryFactory;
+                if (this._layoutInflaterHolderFactoryFactory == null)
+                    this._layoutInflaterHolderFactoryFactory = Mvx.Resolve<IMvxLayoutInflaterHolderFactoryFactory>();
+                return this._layoutInflaterHolderFactoryFactory;
             }
         }
 
@@ -63,22 +63,28 @@ namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
 
         [Obsolete("Switch to new CommonInflate method - with additional attachToRoot parameter")]
         protected virtual View CommonInflate(int resourceId, ViewGroup viewGroup,
-                                             IMvxLayoutInfactorFactory factory)
+                                             IMvxLayoutInflaterHolderFactory factory)
         {
             return CommonInflate(resourceId, viewGroup, factory, viewGroup != null);
         }
 
         protected virtual View CommonInflate(int resourceId, ViewGroup viewGroup,
-                                             IMvxLayoutInfactorFactory factory, bool attachToRoot)
+                                             IMvxLayoutInflaterHolderFactory factory, bool attachToRoot)
         {
             using (new MvxBindingContextStackRegistration<IMvxAndroidBindingContext>(this))
             {
-                var layoutInflator = _layoutInflater.LayoutInflater;
+                var layoutInflator = this._layoutInflaterHolder.LayoutInflater;
                 using (var clone = layoutInflator.CloneInContext(_droidContext))
                 {
                     if (factory != null)
                     {
-                        MvxLayoutInfactorFactory.SetFactory(clone, factory);
+                        //MvxLayoutInfactorFactory.SetFactory(clone, factory);
+                    }
+
+                    MvxLayoutInflater inflater = clone as MvxLayoutInflater;
+                    if (inflater != null)
+                    {
+                        inflater.SetDataContextForInflation(DataContext);
                     }
                     
                     var toReturn = clone.Inflate(resourceId, viewGroup, attachToRoot);

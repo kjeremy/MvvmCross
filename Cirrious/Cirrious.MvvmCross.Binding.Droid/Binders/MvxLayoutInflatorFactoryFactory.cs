@@ -8,9 +8,9 @@
 namespace Cirrious.MvvmCross.Binding.Droid.Binders
 {
     public class MvxLayoutInflatorFactoryFactory
-        : IMvxLayoutInfactorFactoryFactory
+        : IMvxLayoutInflaterHolderFactoryFactory
     {
-        public IMvxLayoutInfactorFactory Create(object bindingSource)
+        public IMvxLayoutInflaterHolderFactory Create(object bindingSource)
         {
             return new MvxBindingLayoutInflatorFactory(bindingSource);
         }

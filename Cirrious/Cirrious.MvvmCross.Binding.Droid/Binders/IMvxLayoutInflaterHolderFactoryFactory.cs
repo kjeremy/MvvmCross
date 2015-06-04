@@ -7,8 +7,8 @@
 
 namespace Cirrious.MvvmCross.Binding.Droid.Binders
 {
-    public interface IMvxLayoutInfactorFactoryFactory
+    public interface IMvxLayoutInflaterHolderFactoryFactory
     {
-        IMvxLayoutInfactorFactory Create(object source);
+        IMvxLayoutInflaterHolderFactory Create(object source);
     }
 }

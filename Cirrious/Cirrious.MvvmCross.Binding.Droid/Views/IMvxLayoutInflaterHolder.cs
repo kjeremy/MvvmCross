@@ -22,7 +22,7 @@ using Java.Lang.Reflect;
 
 namespace Cirrious.MvvmCross.Binding.Droid.Views
 {
-    public interface IMvxLayoutInflater
+    public interface IMvxLayoutInflaterHolder
     {
         LayoutInflater LayoutInflater { get; }
     }
@@ -30,13 +30,18 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
     public class MvxBindingFactoryPlaceholder
     {
         private const string Tag = "MvxBindingFactoryPlaceholder";
+        public IMvxLayoutInflaterHolderFactory Factory { get; set; }
 
         public View OnViewCreated(View view, Context context, IAttributeSet attrs)
         {
-            if (view != null)
+            if (view != null && view.GetTag(Resource.Id.MvvmCrossTagId) != Java.Lang.Boolean.True)
             {
-                // Bind here.
                 Mvx.TaggedTrace(Tag, "Binding {0}", view.ToString());
+
+                // Bind here.
+                Factory.BindView(view, context, attrs);
+
+                view.SetTag(Resource.Id.MvvmCrossTagId, Java.Lang.Boolean.True);
             }
 
             return view;
@@ -47,9 +52,17 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
     {
         private IMvxBindingContextOwner _bindingContextOwner;
         private IMvxAndroidViewFactory _androidViewFactory;
+        private IMvxLayoutInflaterHolderFactoryFactory _layoutInflaterHolderFactoryFactory;
 
         private readonly MvxBindingFactoryPlaceholder _bindingFactoryPlaceholder;
         private bool _setPrivateFactory;
+
+        private object _dataContext;
+
+        public void SetDataContextForInflation(object dataContext)
+        {
+            _dataContext = dataContext;
+        }
 
         public MvxLayoutInflater(Context context)
             : base(context)
@@ -78,6 +91,25 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
         //    //SetPrivateFactoryInternal();
         //    return base.Inflate(parser, root, attachToRoot);
         //}
+
+        // Calligraphy doesn't override this one...
+        public override View Inflate(int resource, ViewGroup root, bool attachToRoot)
+        {
+            try
+            {
+                var factory = FactoryFactory.Create(_dataContext);
+                this._bindingFactoryPlaceholder.Factory = factory;
+
+                var view = base.Inflate(resource, root, attachToRoot);
+
+                return view; //factory.OnCreateView2(view, Context)
+            }
+            finally
+            {
+                this._bindingFactoryPlaceholder.Factory = null;
+                this._dataContext = null;
+            }
+        }
 
         protected override View OnCreateView(View parent, string name, IAttributeSet attrs)
         {
@@ -133,7 +165,17 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             }
         }
 
-        public class LayoutInflaterFactoryHack : IMvxLayoutInfactorFactory
+        protected IMvxLayoutInflaterHolderFactoryFactory FactoryFactory
+        {
+            get
+            {
+                if (this._layoutInflaterHolderFactoryFactory == null)
+                    this._layoutInflaterHolderFactoryFactory = Mvx.Resolve<IMvxLayoutInflaterHolderFactoryFactory>();
+                return this._layoutInflaterHolderFactoryFactory;
+            }
+        }
+
+        public class LayoutInflaterFactoryHack : IMvxLayoutInflaterHolderFactory
         {
             private readonly IFactory2 _factory2;
             private readonly MvxBindingFactoryPlaceholder _factoryPlaceholder;
@@ -152,6 +194,12 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
                     _factory2.OnCreateView(parent, name, context, attrs),
                     context, attrs);
             }
+
+            public View BindView(View view, Context context, IAttributeSet attrs)
+            {
+                // Dummy, refactor this crap.
+                return null;
+            }
         }
 
         private void SetupLayoutFactories(bool cloned)
@@ -161,7 +209,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
 
             if (Factory2 != null && !(Factory2 is MvxLayoutInfactorFactory.FactoryWrapper2))
             {
-                MvxLayoutInfactorFactory.SetFactory(this, new LayoutInflaterFactoryHack(Factory2, _bindingFactoryPlaceholder));                
+                //MvxLayoutInfactorFactory.SetFactory(this, new LayoutInflaterFactoryHack(Factory2, _bindingFactoryPlaceholder));                
             }
 
 

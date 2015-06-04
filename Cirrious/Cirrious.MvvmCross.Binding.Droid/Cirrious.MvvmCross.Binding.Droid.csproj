@@ -54,8 +54,8 @@
     <Compile Include="Binders\IMvxAndroidViewBinder.cs" />
     <Compile Include="Binders\IMvxAndroidViewBinderFactory.cs" />
     <Compile Include="Binders\IMvxAndroidViewFactory.cs" />
-    <Compile Include="Binders\IMvxLayoutInfactorFactory.cs" />
-    <Compile Include="Binders\IMvxLayoutInfactorFactoryFactory.cs" />
+    <Compile Include="Binders\IMvxLayoutInflaterHolderFactory.cs" />
+    <Compile Include="Binders\IMvxLayoutInflaterHolderFactoryFactory.cs" />
     <Compile Include="Binders\MvxAndroidViewBinder.cs" />
     <Compile Include="Binders\MvxAndroidViewBinderFactory.cs" />
     <Compile Include="Binders\MvxAndroidViewFactory.cs" />
@@ -103,7 +103,7 @@
     <Compile Include="Target\MvxViewVisibleBinding.cs" />
     <Compile Include="Views\IMvxAdapter.cs" />
     <Compile Include="Views\IMvxAdapterWithChangedEvent.cs" />
-    <Compile Include="Views\IMvxLayoutInflater.cs" />
+    <Compile Include="Views\IMvxLayoutInflaterHolder.cs" />
     <Compile Include="Target\MvxViewLongClickBinding.cs" />
     <Compile Include="Views\MvxBaseListItemView.cs" />
     <Compile Include="BindingContext\MvxAndroidBindingContext.cs" />
@@ -163,6 +163,9 @@
     <AndroidResource Include="Resources\values\MvxBindingAttributes.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\values\Ids.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
