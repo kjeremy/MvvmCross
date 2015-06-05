@@ -8,7 +8,7 @@ using Java.Lang.Reflect;
 
 namespace Cirrious.MvvmCross.Binding.Droid.Binders
 {
-    public static class MvxLayoutInfactorFactory
+    public static class MvxLayoutInflaterCompat
     {
         private static readonly int SdkInt = (int)Build.VERSION.SdkInt;
         private static Field _layoutInflaterFactory2Field;
@@ -16,9 +16,9 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
 
         internal class FactoryWrapper : Java.Lang.Object, LayoutInflater.IFactory
         {
-            protected readonly IMvxLayoutInflaterHolderFactory DelegateFactory;
+            protected readonly IMvxLayoutInflaterFactory DelegateFactory;
 
-            public FactoryWrapper(IMvxLayoutInflaterHolderFactory delegateFactory)
+            public FactoryWrapper(IMvxLayoutInflaterFactory delegateFactory)
             {
                 this.DelegateFactory = delegateFactory;
             }
@@ -31,7 +31,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
 
         internal class FactoryWrapper2 : FactoryWrapper, LayoutInflater.IFactory2
         {
-            public FactoryWrapper2(IMvxLayoutInflaterHolderFactory delegateFactory)
+            public FactoryWrapper2(IMvxLayoutInflaterFactory delegateFactory)
                 : base(delegateFactory) {}
 
             public View OnCreateView(View parent, string name, Context context, IAttributeSet attrs)
@@ -40,7 +40,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
             }
         }
 
-        public static void SetFactory(LayoutInflater layoutInflater, IMvxLayoutInflaterHolderFactory factory)
+        public static void SetFactory(LayoutInflater layoutInflater, IMvxLayoutInflaterFactory factory)
         {
             if (SdkInt >= 21)
             {
@@ -71,8 +71,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
                 layoutInflater.Factory = (factory != null ? new FactoryWrapper(factory) : null);
             }
         }
-
-
+        
         // Workaround from Support.v4 v22.1.1 library:
         //
         // For APIs >= 11 && < 21, there was a framework bug that prevented a LayoutInflater's

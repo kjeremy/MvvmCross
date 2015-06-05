@@ -16,8 +16,7 @@ using Cirrious.MvvmCross.Binding.Droid.Views;
 namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
 {
     public class MvxAndroidBindingContext
-        : MvxBindingContext
-          , IMvxAndroidBindingContext
+        : MvxBindingContext, IMvxAndroidBindingContext
     {
         private readonly Context _droidContext;
         private IMvxLayoutInflaterHolder _layoutInflaterHolder;
@@ -36,7 +35,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
             set { this._layoutInflaterHolder = value; }
         }
 
-        protected IMvxLayoutInflaterHolderFactoryFactory FactoryFactory
+        internal protected IMvxLayoutInflaterHolderFactoryFactory FactoryFactory
         {
             get
             {
@@ -74,25 +73,9 @@ namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
             using (new MvxBindingContextStackRegistration<IMvxAndroidBindingContext>(this))
             {
                 var layoutInflator = this._layoutInflaterHolder.LayoutInflater;
-                using (var clone = layoutInflator.CloneInContext(_droidContext))
+                //using (var clone = layoutInflator.CloneInContext(_droidContext))
                 {
-                    if (factory != null)
-                    {
-                        //MvxLayoutInfactorFactory.SetFactory(clone, factory);
-                    }
-
-                    MvxLayoutInflater inflater = clone as MvxLayoutInflater;
-                    if (inflater != null)
-                    {
-                        inflater.SetDataContextForInflation(DataContext);
-                    }
-                    
-                    var toReturn = clone.Inflate(resourceId, viewGroup, attachToRoot);
-                    if (factory != null)
-                    {
-                        RegisterBindingsWithClearKey(toReturn, factory.CreatedBindings);
-                    }
-                    return toReturn;
+                    return layoutInflator.Inflate(resourceId, viewGroup, attachToRoot);
                 }
             }
         }

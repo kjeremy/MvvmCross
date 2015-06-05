@@ -45,6 +45,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Mono.Android" />
+    <Reference Include="Mono.Android.Export" />
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -59,7 +60,7 @@
     <Compile Include="Binders\MvxAndroidViewBinder.cs" />
     <Compile Include="Binders\MvxAndroidViewBinderFactory.cs" />
     <Compile Include="Binders\MvxAndroidViewFactory.cs" />
-    <Compile Include="Binders\MvxLayoutInfactorFactory.cs" />
+    <Compile Include="Binders\MvxLayoutInflaterCompat.cs" />
     <Compile Include="Binders\MvxLayoutInflatorFactoryFactory.cs" />
     <Compile Include="Binders\ViewTypeResolvers\IMvxAxmlNameViewTypeResolver.cs" />
     <Compile Include="Binders\ViewTypeResolvers\IMvxNamespaceListViewTypeResolver.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="Target\MvxViewLongClickBinding.cs" />
     <Compile Include="Views\MvxBaseListItemView.cs" />
     <Compile Include="BindingContext\MvxAndroidBindingContext.cs" />
+    <Compile Include="Views\MvxContextWrapper.cs" />
     <Compile Include="Views\MvxExpandableListAdapter.cs" />
     <Compile Include="Views\MvxExpandableListView.cs" />
     <Compile Include="Views\MvxFrameControl.cs" />
