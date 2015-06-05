@@ -59,6 +59,12 @@ namespace Cirrious.MvvmCross.Droid.Views
 
         protected override void AttachBaseContext(Context @base)
         {
+            if (this is IMvxAndroidSplashScreenActivity)
+            {
+                // Do not attach our inflater to splash screens.
+                base.AttachBaseContext(@base);
+                return;
+            }
             base.AttachBaseContext(MvxContextWrapper.Wrap(@base, this));
         }
     }
