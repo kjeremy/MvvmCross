@@ -55,20 +55,17 @@ namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
             var view = CommonInflate(
                 resourceId,
                 viewGroup,
-                FactoryFactory.Create(DataContext),
                 attachToRoot);
             return view;
         }
 
         [Obsolete("Switch to new CommonInflate method - with additional attachToRoot parameter")]
-        protected virtual View CommonInflate(int resourceId, ViewGroup viewGroup,
-                                             IMvxLayoutInflaterHolderFactory factory)
+        protected virtual View CommonInflate(int resourceId, ViewGroup viewGroup)
         {
-            return CommonInflate(resourceId, viewGroup, factory, viewGroup != null);
+            return CommonInflate(resourceId, viewGroup, viewGroup != null);
         }
 
-        protected virtual View CommonInflate(int resourceId, ViewGroup viewGroup,
-                                             IMvxLayoutInflaterHolderFactory factory, bool attachToRoot)
+        protected virtual View CommonInflate(int resourceId, ViewGroup viewGroup, bool attachToRoot)
         {
             using (new MvxBindingContextStackRegistration<IMvxAndroidBindingContext>(this))
             {
