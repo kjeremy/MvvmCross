@@ -30,8 +30,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             {
                 return this._inflater ??
                        (this._inflater =
-                           new MvxLayoutInflater(LayoutInflater.From(BaseContext), this,
-                               false));
+                           new MvxLayoutInflater(LayoutInflater.From(BaseContext), this, null, false));
             }
 
             return base.GetSystemService(name);

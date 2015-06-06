@@ -5,21 +5,14 @@
 // 
 // Project Lead - Stuart Lodge, @slodge, me@slodge.com
 
-using System;
-using System.Collections.Generic;
-using System.Xml;
 using Android.Content;
 using Android.OS;
-using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Cirrious.CrossCore;
-using Cirrious.MvvmCross.Binding.BindingContext;
-using Cirrious.MvvmCross.Binding.Bindings;
 using Cirrious.MvvmCross.Binding.Droid.Binders;
 using Cirrious.MvvmCross.Binding.Droid.BindingContext;
 using Java.Interop;
-using Java.Lang;
 using Java.Lang.Reflect;
 
 namespace Cirrious.MvvmCross.Binding.Droid.Views
@@ -29,74 +22,75 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
         LayoutInflater LayoutInflater { get; }
     }
 
-    public class MvxBinderPlaceholder
-    {
-        private IMvxLayoutInflaterHolderFactory _factory;
-        private const string Tag = "MvxBindingFactoryPlaceholder";
-
-        public IMvxLayoutInflaterHolderFactory Factory
-        {
-            get { return this._factory; }
-            set
-            {
-                this._factory = value;
-                Mvx.TaggedTrace(Tag, "Factory set to {0}", value == null ? "null" : value.ToString());
-            }
-        }
-
-        public View OnViewCreated(View view, Context context, IAttributeSet attrs)
-        {
-            if ( Factory != null && view != null && view.GetTag(Resource.Id.MvvmCrossTagId) != Java.Lang.Boolean.True)
-            {
-                Mvx.TaggedTrace(Tag, "Binding {0}", view.ToString());
-
-                // Bind here.
-                view = Factory.BindView(view, context, attrs);
-
-                view.SetTag(Resource.Id.MvvmCrossTagId, Java.Lang.Boolean.True);
-            }
-
-            return view;
-        }
-    }
-
+    /// <summary>
+    /// Custom LayoutInflater responsible for inflating views and hooking up bindings
+    /// Typically this is attached to MvxActivity and co via our MvxContextWrapper.
+    /// 
+    /// WPotential order of view creation is the following (HC+):
+    ///   1. IFactory2.OnCreateView
+    ///   2. IFactory.OnCreateView
+    ///   3. PrivateFactory.OnCreateView
+    ///   4. OnCreateView(parent, name, attrs)
+    ///   5. OnCreateView(parent, name, attrs)
+    ///   6. CreateView (sadly final)
+    ///
+    /// We intercept these calls and wrap any IFactory/IFactory2 with our own factory
+    /// that binds when the view is returned.
+    /// 
+    /// Heavily based on Calligraphy's CalligraphyLayoutInflater
+    /// See: https://github.com/chrisjenx/Calligraphy/blob/master/calligraphy/src/main/java/uk/co/chrisjenx/calligraphy/CalligraphyLayoutInflater.java" />
+    /// </summary>
     public class MvxLayoutInflater : LayoutInflater
     {
+        public class MvxBindingVisitor
+        {
+            public IMvxLayoutInflaterHolderFactory Factory { get; set; }
+
+            public View OnViewCreated(View view, Context context, IAttributeSet attrs)
+            {
+                if (Factory != null && view != null && view.GetTag(Resource.Id.MvvmCrossTagId) != Java.Lang.Boolean.True)
+                {
+                    // Bind here.
+                    view = Factory.BindView(view, context, attrs);
+
+                    view.SetTag(Resource.Id.MvvmCrossTagId, Java.Lang.Boolean.True);
+                }
+
+                return view;
+            }
+        }
+
         internal static BuildVersionCodes Sdk = Build.VERSION.SdkInt;
+
+        private readonly MvxBindingVisitor _bindingVisitor;
 
         private IMvxAndroidViewFactory _androidViewFactory;
         private IMvxLayoutInflaterHolderFactoryFactory _layoutInflaterHolderFactoryFactory;
-
-        private readonly MvxBinderPlaceholder _binderPlaceholder;
+        private Field _constructorArgs;
         private bool _setPrivateFactory;
 
-        private Field _constructorArgs;
-
-        public void SetCurrentFactory(IMvxLayoutInflaterHolderFactory factory)
-        {
-            this._binderPlaceholder.Factory = factory;
-        }
 
         public MvxLayoutInflater(Context context)
             : base(context)
         {
-            this._binderPlaceholder = new MvxBinderPlaceholder();
+            this._bindingVisitor = new MvxBindingVisitor();
             SetupLayoutFactories(false);
         }
 
-        public MvxLayoutInflater(LayoutInflater original, Context newContext, bool cloned)
+        public MvxLayoutInflater(LayoutInflater original, Context newContext, MvxBindingVisitor bindingVisitor, bool cloned)
             : base(original, newContext)
         {
-            this._binderPlaceholder = new MvxBinderPlaceholder();
+            this._bindingVisitor = bindingVisitor ?? new MvxBindingVisitor();
 
             SetupLayoutFactories(cloned);
         }
 
         public override LayoutInflater CloneInContext(Context newContext)
         {
-            return new MvxLayoutInflater(this, newContext, true);
+            return new MvxLayoutInflater(this, newContext, _bindingVisitor, true);
         }
 
+        // We can't call this.  See: https://bugzilla.xamarin.com/show_bug.cgi?id=30843
         //public override View Inflate(XmlReader parser, ViewGroup root, bool attachToRoot)
         //{
         //    SetPrivateFactoryInternal();
@@ -106,6 +100,8 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
         // Calligraphy doesn't override this one...
         public override View Inflate(int resource, ViewGroup root, bool attachToRoot)
         {
+            // Make sure our private factory is set since LayoutInflater > Honeycomb
+            // uses a private factory.
             SetPrivateFactoryInternal();
 
             try
@@ -122,12 +118,14 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
 
                     // Set the current factory used to generate bindings
                     if (factory != null)
-                        this._binderPlaceholder.Factory = factory;
+                        this._bindingVisitor.Factory = factory;
                 }
 
+                // Inflate the resource
                 var view = base.Inflate(resource, root, attachToRoot);
 
 
+                // Register bindings with clear key
                 if (currentBindingContext != null)
                 {
                     if (factory != null)
@@ -138,15 +136,14 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             }
             finally
             {
-                this._binderPlaceholder.Factory = null;
+                this._bindingVisitor.Factory = null;
             }
-
-            return null;
         }
 
         protected override View OnCreateView(View parent, string name, IAttributeSet attrs)
         {
-            return this._binderPlaceholder.OnViewCreated(base.OnCreateView(parent, name, attrs), this.Context, attrs);
+            return this._bindingVisitor.OnViewCreated(
+                base.OnCreateView(parent, name, attrs), this.Context, attrs);
         }
 
         protected override View OnCreateView(string name, IAttributeSet attrs)
@@ -154,7 +151,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             View view = AndroidViewFactory.CreateView(null, name, this.Context, attrs);
             if (view == null)
                 view = base.OnCreateView(name, attrs);
-            return this._binderPlaceholder.OnViewCreated(view, view.Context, attrs);
+            return this._bindingVisitor.OnViewCreated(view, view.Context, attrs);
         }
 
         // Note: setFactory/setFactory2 are implemented with export
@@ -168,7 +165,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             if (!(factory is MvxLayoutInflaterCompat.FactoryWrapper))
             {
                 base.Factory =
-                    new MvxLayoutInflaterCompat.FactoryWrapper(new DelegateFactory1(factory, this._binderPlaceholder));
+                    new MvxLayoutInflaterCompat.FactoryWrapper(new DelegateFactory1(factory, this._bindingVisitor));
                 return;
             }
 
@@ -183,7 +180,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             if (!(factory2 is MvxLayoutInflaterCompat.FactoryWrapper2))
             {
                 base.Factory2 =
-                    new MvxLayoutInflaterCompat.FactoryWrapper2(new DelegateFactory2(factory2, this._binderPlaceholder));
+                    new MvxLayoutInflaterCompat.FactoryWrapper2(new DelegateFactory2(factory2, this._bindingVisitor));
                 return;
             }
             base.Factory2 = factory2;
@@ -200,13 +197,13 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             {
                 if (Factory2 != null && !(Factory2 is MvxLayoutInflaterCompat.FactoryWrapper2)) // Check for FactoryWrapper2 may be too loose
                 {
-                    MvxLayoutInflaterCompat.SetFactory(this, new DelegateFactory2(Factory2, _binderPlaceholder));
+                    MvxLayoutInflaterCompat.SetFactory(this, new DelegateFactory2(Factory2, this._bindingVisitor));
                 }
             }
 
             if (Factory != null && !(Factory is MvxLayoutInflaterCompat.FactoryWrapper)) // Check for FactoryWrapper may be too loose
             {
-                MvxLayoutInflaterCompat.SetFactory(this, new DelegateFactory1(Factory, _binderPlaceholder));
+                MvxLayoutInflaterCompat.SetFactory(this, new DelegateFactory1(Factory, this._bindingVisitor));
             }
         }
 
@@ -224,15 +221,15 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
                 return;
             }
 
-            Class layoutInflaterClass = Class.FromType(typeof(LayoutInflater));
-            Method setPrivateFactoryMethod = layoutInflaterClass.GetMethod("setPrivateFactory", Class.FromType(typeof(IFactory2)));
+            Java.Lang.Class layoutInflaterClass = Java.Lang.Class.FromType(typeof(LayoutInflater));
+            Method setPrivateFactoryMethod = layoutInflaterClass.GetMethod("setPrivateFactory", Java.Lang.Class.FromType(typeof(IFactory2)));
             if (setPrivateFactoryMethod != null)
             {
                 try
                 {
                     setPrivateFactoryMethod.Accessible = true;
                     setPrivateFactoryMethod.Invoke(this,
-                        new PrivateFactoryWrapper2((IFactory2)Context, this, this._binderPlaceholder));
+                        new PrivateFactoryWrapper2((IFactory2)Context, this, this._bindingVisitor));
                 }
                 catch(Java.Lang.Exception ex)
                 {
@@ -249,7 +246,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             {
                 if (_constructorArgs == null)
                 {
-                    Class layoutInflaterClass = Class.FromType(typeof(LayoutInflater));
+                    Java.Lang.Class layoutInflaterClass = Java.Lang.Class.FromType(typeof(LayoutInflater));
                     _constructorArgs = layoutInflaterClass.GetDeclaredField("mConstructorArgs");
                     _constructorArgs.Accessible = true;
                 }
@@ -266,7 +263,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
                 {
                     view = CreateView(name, null, attrs);
                 }
-                catch (ClassNotFoundException ignored) {}
+                catch (Java.Lang.ClassNotFoundException ignored) {}
                 finally
                 {
                     constructorArgsArr[0] = lastContext;
@@ -294,39 +291,12 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             }
         }
 
-        public class LayoutInflaterFactoryHack : IMvxLayoutInflaterHolderFactory
-        {
-            private readonly IFactory2 _factory2;
-            private readonly MvxBinderPlaceholder _factoryPlaceholder;
-
-            public IList<KeyValuePair<object, IMvxUpdateableBinding>> CreatedBindings { get; private set; }
-
-            public LayoutInflaterFactoryHack(IFactory2 factory2, MvxBinderPlaceholder factoryPlaceholder)
-            {
-                this._factory2 = factory2;
-                this._factoryPlaceholder = factoryPlaceholder;
-            }
-
-            public View OnCreateView(View parent, string name, Context context, IAttributeSet attrs)
-            {
-                return _factoryPlaceholder.OnViewCreated(
-                    _factory2.OnCreateView(parent, name, context, attrs),
-                    context, attrs);
-            }
-
-            public View BindView(View view, Context context, IAttributeSet attrs)
-            {
-                // Dummy, refactor this crap.
-                return null;
-            }
-        }
-
         private class DelegateFactory2 : IMvxLayoutInflaterFactory
         {
             private readonly IFactory2 _factory;
-            private readonly MvxBinderPlaceholder _factoryPlaceholder;
+            private readonly MvxBindingVisitor _factoryPlaceholder;
 
-            public DelegateFactory2(IFactory2 factoryToWrap, MvxBinderPlaceholder binder)
+            public DelegateFactory2(IFactory2 factoryToWrap, MvxBindingVisitor binder)
             {
                 _factory = factoryToWrap;
                 _factoryPlaceholder = binder;
@@ -343,12 +313,12 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
         private class DelegateFactory1 : IMvxLayoutInflaterFactory
         {
             private readonly IFactory _factory;
-            private readonly MvxBinderPlaceholder _factoryPlaceholder;
+            private readonly MvxBindingVisitor _factoryPlaceholder;
 
-            public DelegateFactory1(IFactory factoryToWrap, MvxBinderPlaceholder binder)
+            public DelegateFactory1(IFactory factoryToWrap, MvxBindingVisitor bindingVisitor)
             {
                 _factory = factoryToWrap;
-                _factoryPlaceholder = binder;
+                _factoryPlaceholder = bindingVisitor;
             }
 
             public View OnCreateView(View parent, string name, Context context, IAttributeSet attrs)
@@ -359,81 +329,30 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             }
         }
 
-        //private class DelegateFactory : Java.Lang.Object, IFactory
-        //{
-        //    private readonly IFactory _factory;
-        //    private readonly MvxLayoutInflater _layoutInflater;
-        //    private readonly MvxBinderPlaceholder _factoryPlaceholder;
-
-        //    public DelegateFactory(IFactory factory, MvxLayoutInflater layoutInflater, MvxBinderPlaceholder factoryPlaceholder)
-        //    {
-        //        this._factory = factory;
-        //        this._layoutInflater = layoutInflater;
-        //        this._factoryPlaceholder = factoryPlaceholder;
-        //    }
-
-        //    public View OnCreateView(string name, Context context, IAttributeSet attrs)
-        //    {
-        //        if (MvxLayoutInflater.Sdk > BuildVersionCodes.Honeycomb)
-        //        {
-        //            return _factoryPlaceholder.OnViewCreated(
-        //                _factory.OnCreateView(name, context, attrs),
-        //                context, attrs);
-        //        }
-        //        throw new NotImplementedException("Anything before the Honeycomb hideout deserves to be burned.");
-        //    }
-        //}
-
-        //private class DelegateFactory2 : Java.Lang.Object, IFactory2
-        //{
-        //    private readonly IFactory2 _factory2;
-        //    private readonly MvxBinderPlaceholder _factoryPlaceholder;
-
-        //    public DelegateFactory2(IFactory2 factory2, MvxBinderPlaceholder factoryPlaceholder)
-        //    {
-        //        this._factory2 = factory2;
-        //        this._factoryPlaceholder = factoryPlaceholder;
-        //    }
-
-        //    public View OnCreateView(string name, Context context, IAttributeSet attrs)
-        //    {
-        //        return _factoryPlaceholder.OnViewCreated(
-        //            _factory2.OnCreateView(name, context, attrs),
-        //            context, attrs);
-        //    }
-
-        //    public View OnCreateView(View parent, string name, Context context, IAttributeSet attrs)
-        //    {
-        //        return _factoryPlaceholder.OnViewCreated(
-        //            _factory2.OnCreateView(parent, name, context, attrs),
-        //            context, attrs);
-        //    }
-        //}
-
         private class PrivateFactoryWrapper2 : Java.Lang.Object, IFactory2
         {
             private readonly IFactory2 _factory2;
-            private readonly MvxBinderPlaceholder _factoryPlaceholder;
+            private readonly MvxBindingVisitor _bindingVisitor;
             private readonly MvxLayoutInflater _inflater;
 
             internal PrivateFactoryWrapper2(IFactory2 factory2, MvxLayoutInflater inflater,
-                MvxBinderPlaceholder factoryPlaceholder)
+                MvxBindingVisitor bindingVisitor)
             {
                 _factory2 = factory2;
                 _inflater = inflater;
-                _factoryPlaceholder = factoryPlaceholder;
+                this._bindingVisitor = bindingVisitor;
             }
 
             public View OnCreateView(string name, Context context, IAttributeSet attrs)
             {
-                return _factoryPlaceholder.OnViewCreated(
+                return this._bindingVisitor.OnViewCreated(
                     _factory2.OnCreateView(name, context, attrs),
                     context, attrs);
             }
 
             public View OnCreateView(View parent, string name, Context context, IAttributeSet attrs)
             {
-                return _factoryPlaceholder.OnViewCreated(
+                return this._bindingVisitor.OnViewCreated(
                     _inflater.CreateCustomViewInternal(
                         parent,
                         _factory2.OnCreateView(parent, name, context, attrs),
