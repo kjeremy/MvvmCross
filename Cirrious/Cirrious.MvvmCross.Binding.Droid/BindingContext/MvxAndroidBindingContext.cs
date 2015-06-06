@@ -70,10 +70,11 @@ namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
             using (new MvxBindingContextStackRegistration<IMvxAndroidBindingContext>(this))
             {
                 var layoutInflator = this._layoutInflaterHolder.LayoutInflater;
-                //using (var clone = layoutInflator.CloneInContext(_droidContext))
-                {
-                    return layoutInflator.Inflate(resourceId, viewGroup, attachToRoot);
-                }
+                
+                // This is most likely a MvxLayoutInflater but it doesn't have to be.
+                // It handles setting the bindings and interacts with this instance of
+                // MvxAndroidBindingContext through the use of MvxAndroidBindingContextHelpers.Current().
+                return layoutInflator.Inflate(resourceId, viewGroup, attachToRoot);
             }
         }
     }
