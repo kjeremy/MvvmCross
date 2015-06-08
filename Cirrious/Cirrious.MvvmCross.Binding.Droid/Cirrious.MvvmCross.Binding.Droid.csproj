@@ -55,6 +55,7 @@
     <Compile Include="Binders\IMvxAndroidViewBinder.cs" />
     <Compile Include="Binders\IMvxAndroidViewBinderFactory.cs" />
     <Compile Include="Binders\IMvxAndroidViewFactory.cs" />
+    <Compile Include="Binders\IMvxLayoutInflaterFactory.cs" />
     <Compile Include="Binders\IMvxLayoutInflaterHolderFactory.cs" />
     <Compile Include="Binders\IMvxLayoutInflaterHolderFactoryFactory.cs" />
     <Compile Include="Binders\MvxAndroidViewBinder.cs" />
@@ -115,6 +116,7 @@
     <Compile Include="Views\MvxDatePicker.cs" />
     <Compile Include="Views\MvxGridView.cs" />
     <Compile Include="Views\MvxAutoCompleteTextView.cs" />
+    <Compile Include="Views\MvxLayoutInflater.cs" />
     <Compile Include="Views\MvxRadioGroup.cs" />
     <Compile Include="Views\MvxSpinner.cs" />
     <Compile Include="Views\MvxFilteringAdapter.cs" />

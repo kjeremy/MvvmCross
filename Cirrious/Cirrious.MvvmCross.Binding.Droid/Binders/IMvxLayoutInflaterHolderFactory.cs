@@ -18,12 +18,6 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
     {
         IList<KeyValuePair<object, IMvxUpdateableBinding>> CreatedBindings { get; }
 
-        // I added this as a convenience but this class is going to need some love.
-        View BindView(View view, Context context, IAttributeSet attrs);
-    }
-
-    public interface IMvxLayoutInflaterFactory
-    {
-        View OnCreateView(View parent, string name, Context context, IAttributeSet attrs);
+        View BindCreatedView(View view, Context context, IAttributeSet attrs);
     }
 }

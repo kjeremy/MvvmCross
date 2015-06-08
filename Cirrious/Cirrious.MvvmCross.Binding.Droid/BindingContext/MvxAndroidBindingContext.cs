@@ -20,7 +20,6 @@ namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
     {
         private readonly Context _droidContext;
         private IMvxLayoutInflaterHolder _layoutInflaterHolder;
-        private IMvxLayoutInflaterHolderFactoryFactory _layoutInflaterHolderFactoryFactory;
 
         public MvxAndroidBindingContext(Context droidContext, IMvxLayoutInflaterHolder layoutInflaterHolder, object source = null)
             : base(source)
@@ -33,16 +32,6 @@ namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
         {
             get { return this._layoutInflaterHolder; }
             set { this._layoutInflaterHolder = value; }
-        }
-
-        internal protected IMvxLayoutInflaterHolderFactoryFactory FactoryFactory
-        {
-            get
-            {
-                if (this._layoutInflaterHolderFactoryFactory == null)
-                    this._layoutInflaterHolderFactoryFactory = Mvx.Resolve<IMvxLayoutInflaterHolderFactoryFactory>();
-                return this._layoutInflaterHolderFactoryFactory;
-            }
         }
 
         public virtual View BindingInflate(int resourceId, ViewGroup viewGroup)
@@ -69,7 +58,7 @@ namespace Cirrious.MvvmCross.Binding.Droid.BindingContext
         {
             using (new MvxBindingContextStackRegistration<IMvxAndroidBindingContext>(this))
             {
-                var layoutInflator = this._layoutInflaterHolder.LayoutInflater;
+                var layoutInflator = this._layoutInflaterHolder.LayoutInflater.CloneInContext(_droidContext);
                 
                 // This is most likely a MvxLayoutInflater but it doesn't have to be.
                 // It handles setting the bindings and interacts with this instance of

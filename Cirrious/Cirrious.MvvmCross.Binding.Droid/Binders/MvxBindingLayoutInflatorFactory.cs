@@ -62,10 +62,10 @@ namespace Cirrious.MvvmCross.Binding.Droid.Binders
             }
 
             View view = AndroidViewFactory.CreateView(parent, name, context, attrs);
-            return this.BindView(view, context, attrs);
+            return this.BindCreatedView(view, context, attrs);
         }
 
-        public View BindView(View view, Context context, IAttributeSet attrs)
+        public View BindCreatedView(View view, Context context, IAttributeSet attrs)
         {
             if (view != null)
                 Binder.BindView(view, context, attrs);
