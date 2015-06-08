@@ -26,12 +26,12 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
     /// Custom LayoutInflater responsible for inflating views and hooking up bindings
     /// Typically this is attached to MvxActivity and co via our MvxContextWrapper.
     /// 
-    /// WPotential order of view creation is the following (HC+):
+    /// Potential order of view creation is the following (HC+):
     ///   1. IFactory2.OnCreateView
     ///   2. IFactory.OnCreateView
     ///   3. PrivateFactory.OnCreateView
     ///   4. OnCreateView(parent, name, attrs)
-    ///   5. OnCreateView(parent, name, attrs)
+    ///   5. OnCreateView(name, attrs)
     ///   6. CreateView (sadly final)
     ///
     /// We intercept these calls and wrap any IFactory/IFactory2 with our own factory
