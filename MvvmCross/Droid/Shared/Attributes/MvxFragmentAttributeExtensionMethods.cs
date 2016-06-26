@@ -16,9 +16,10 @@ namespace MvvmCross.Droid.Shared.Attributes
 {
     public static class MvxFragmentAttributeExtensionMethods
     {
-        public static bool HasMvxFragmentAttribute(this Type candidateType)
+        public static bool HasMvxFragmentAttribute(this Type candidateType, out MvxFragmentAttribute[] fragmentAttributes)
         {
             var attributes = candidateType.GetCustomAttributes(typeof(MvxFragmentAttribute), true);
+            fragmentAttributes = (MvxFragmentAttribute[])attributes;
             return attributes.Length > 0;
         }
 
@@ -32,12 +33,16 @@ namespace MvvmCross.Droid.Shared.Attributes
             return attributes.Cast<MvxFragmentAttribute>();
         }
 
-        public static MvxFragmentAttribute GetMvxFragmentAttribute(this Type fromFragmentType,
-            Type fragmentActivityParentType)
+        public static MvxFragmentAttribute GetMvxFragmentAttribute(this Type fromFragmentType, Type fragmentActivityParentType)
         {
             var mvxFragmentAttributes = fromFragmentType.GetMvxFragmentAttributes();
+            return fromFragmentType.GetMvxFragmentAttribute(fragmentActivityParentType, mvxFragmentAttributes);
+        }
+
+        public static MvxFragmentAttribute GetMvxFragmentAttribute(this Type fromFragmentType, Type fragmentActivityParentType, IEnumerable<MvxFragmentAttribute> existingFragmentAttributes)
+        {
             var activityViewModelType = GetActivityViewModelType(fragmentActivityParentType);
-            var mvxFragmentAttribute = mvxFragmentAttributes.FirstOrDefault(x => x.ParentActivityViewModelType == activityViewModelType);
+            var mvxFragmentAttribute = existingFragmentAttributes.FirstOrDefault(x => x.ParentActivityViewModelType == activityViewModelType);
 
             if (mvxFragmentAttribute == null)
                 throw new InvalidOperationException($"Sorry but Fragment Type: {fromFragmentType} hasn't registered any Activity with ViewModel Type {fragmentActivityParentType}");
@@ -59,21 +64,21 @@ namespace MvvmCross.Droid.Shared.Attributes
 
         public static bool IsFragmentCacheable(this Type fragmentType, Type fragmentActivityParentType)
         {
-            if (!fragmentType.HasMvxFragmentAttribute())
+            MvxFragmentAttribute[] attributes;
+            if (!fragmentType.HasMvxFragmentAttribute(out attributes))
                 return false;
 
-            var mvxFragmentAttribute = fragmentType.GetMvxFragmentAttribute(fragmentActivityParentType);
+            var mvxFragmentAttribute = fragmentType.GetMvxFragmentAttribute(fragmentActivityParentType, attributes);
             return mvxFragmentAttribute.IsCacheableFragment;
         }
 
         public static Type GetViewModelType(this Type fragmentType)
         {
-            if (!fragmentType.HasMvxFragmentAttribute())
+            MvxFragmentAttribute[] attributes;
+            if (!fragmentType.HasMvxFragmentAttribute(out attributes))
                 return null;
 
-            return fragmentType.GetMvxFragmentAttributes()
-                .Select(x => x.ViewModelType)
-                .First();
+            return attributes.Select(x => x.ViewModelType).First();
         }
     }
 }

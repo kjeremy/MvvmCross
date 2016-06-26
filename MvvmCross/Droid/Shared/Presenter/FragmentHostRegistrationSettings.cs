@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using MvvmCross.Droid.Views;
 
 namespace MvvmCross.Droid.Shared.Presenter
 {
@@ -37,32 +36,44 @@ namespace MvvmCross.Droid.Shared.Presenter
 
                 isInitialized = true;
 
-                var typesWithMvxFragmentAttribute =
+                var pairOfTypeAndMvxFragmentAttributes =
                     _assembliesToLookup
                         .SelectMany(x => x.DefinedTypes)
                         .Select(x => x.AsType())
-                        .Where(x => x.HasMvxFragmentAttribute())
-                        .ToList();
+                        .Select(type =>
+                        {
+                            MvxFragmentAttribute[] attrs;
+                            type.HasMvxFragmentAttribute(out attrs);
+                            return new { type, attrs };
+                        })
+                        .Where(typeAndAttrs => typeAndAttrs.attrs?.Length > 0);
 
-                foreach (var typeWithMvxFragmentAttribute in typesWithMvxFragmentAttribute)
+                foreach (var typeAttrPair in pairOfTypeAndMvxFragmentAttributes)
                 {
-                    if (!_fragmentTypeToMvxFragmentAttributeMap.ContainsKey(typeWithMvxFragmentAttribute))
-                        _fragmentTypeToMvxFragmentAttributeMap.Add(typeWithMvxFragmentAttribute, new List<MvxFragmentAttribute>());
+                    var type = typeAttrPair.type;
+                    var attrs = typeAttrPair.attrs;
 
-                    foreach (var mvxAttribute in typeWithMvxFragmentAttribute.GetMvxFragmentAttributes())
-                        _fragmentTypeToMvxFragmentAttributeMap[typeWithMvxFragmentAttribute].Add(mvxAttribute);
+                    IList<MvxFragmentAttribute> attributeList;
+                    if (!_fragmentTypeToMvxFragmentAttributeMap.TryGetValue(type, out attributeList))
+                    {
+                        attributeList = new List<MvxFragmentAttribute>();
+                        _fragmentTypeToMvxFragmentAttributeMap.Add(type, attributeList);
+                    }
+
+                    foreach (var mvxAttribute in attrs)
+                        attributeList.Add(mvxAttribute);
                 }
 
                 _viewModelToFragmentTypeMap =
-                    typesWithMvxFragmentAttribute.ToDictionary(GetAssociatedViewModelType, fragmentType => fragmentType);
+                    pairOfTypeAndMvxFragmentAttributes.ToDictionary(p => GetAssociatedViewModelType(p.type, p.attrs), p => p.type);
             }
         }
 
-        private Type GetAssociatedViewModelType(Type fromFragmentType)
+        private Type GetAssociatedViewModelType(Type fromFragmentType, IEnumerable<MvxFragmentAttribute> fragmentAttributes)
         {
             Type viewModelType = _viewModelTypeFinder.FindTypeOrNull(fromFragmentType);
 
-            return viewModelType ?? fromFragmentType.GetMvxFragmentAttributes().First().ViewModelType;
+            return viewModelType ?? fragmentAttributes.First().ViewModelType;
         }
 
         public bool IsTypeRegisteredAsFragment(Type viewModelType)

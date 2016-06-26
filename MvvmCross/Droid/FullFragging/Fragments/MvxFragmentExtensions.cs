@@ -70,10 +70,11 @@ namespace MvvmCross.Droid.FullFragging.Fragments
 
             if (viewModelType == null)
             {
-                if (!type.HasMvxFragmentAttribute())
+                MvxFragmentAttribute[] fragmentAttributes;
+                if (!type.HasMvxFragmentAttribute(out fragmentAttributes))
                     throw new InvalidOperationException($"Your fragment is not generic and it does not have {nameof(MvxFragmentAttribute)} attribute set!");
 
-                var cacheableFragmentAttribute = type.GetMvxFragmentAttribute(fragmentActivityParentType);
+                var cacheableFragmentAttribute = type.GetMvxFragmentAttribute(fragmentActivityParentType, fragmentAttributes);
                 if (cacheableFragmentAttribute.ViewModelType == null)
                     throw new InvalidOperationException($"Your fragment is not generic and it does not use {nameof(MvxFragmentAttribute)} with ViewModel Type constructor.");
 
