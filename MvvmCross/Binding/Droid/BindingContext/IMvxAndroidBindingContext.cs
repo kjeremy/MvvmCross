@@ -17,8 +17,8 @@ namespace MvvmCross.Binding.Droid.BindingContext
     {
         IMvxLayoutInflaterHolder LayoutInflaterHolder { get; set; }
 
-        View BindingInflate(int resourceId, ViewGroup viewGroup);
+        View BindingInflate(int resourceId, ViewGroup parent);
 
-        View BindingInflate(int resourceId, ViewGroup viewGroup, bool attachToParent);
+        View BindingInflate(int resourceId, ViewGroup parent, bool attachToParent);
     }
 }

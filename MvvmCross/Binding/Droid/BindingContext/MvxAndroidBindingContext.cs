@@ -34,21 +34,21 @@ namespace MvvmCross.Binding.Droid.BindingContext
             set { this._layoutInflaterHolder = value; }
         }
 
-        public virtual View BindingInflate(int resourceId, ViewGroup viewGroup)
+        public virtual View BindingInflate(int resourceId, ViewGroup parent)
         {
-            return this.BindingInflate(resourceId, viewGroup, true);
+            return this.BindingInflate(resourceId, parent, parent != null);
         }
 
-        public virtual View BindingInflate(int resourceId, ViewGroup viewGroup, bool attachToRoot)
+        public virtual View BindingInflate(int resourceId, ViewGroup parent, bool attachToRoot)
         {
             var view = this.CommonInflate(
                 resourceId,
-                viewGroup,
+                parent,
                 attachToRoot);
             return view;
         }
 
-        protected virtual View CommonInflate(int resourceId, ViewGroup viewGroup, bool attachToRoot)
+        protected virtual View CommonInflate(int resourceId, ViewGroup parent, bool attachToRoot)
         {
             using (new MvxBindingContextStackRegistration<IMvxAndroidBindingContext>(this))
             {
@@ -57,7 +57,7 @@ namespace MvvmCross.Binding.Droid.BindingContext
                     // This is most likely a MvxLayoutInflater but it doesn't have to be.
                     // It handles setting the bindings and interacts with this instance of
                     // MvxAndroidBindingContext through the use of MvxAndroidBindingContextHelpers.Current().
-                    return layoutInflater.Inflate(resourceId, viewGroup, attachToRoot);
+                    return layoutInflater.Inflate(resourceId, parent, attachToRoot);
                 }
             }
         }
